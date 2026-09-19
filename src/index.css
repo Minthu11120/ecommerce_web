@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: 'Cinzel', serif;
+  --font-sans: 'Plus Jakarta Sans', 'Noto Sans Myanmar', sans-serif;
+  --font-myanmar: 'Noto Sans Myanmar', sans-serif;
+}
+
+/* Low bandwidth & smooth transition utilities */
+.low-bandwidth img {
+  filter: contrast(105%);
+}
+
+/* Custom scrollbar for catalogs & drawers */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f5f5f4;
+}
+::-webkit-scrollbar-thumb {
+  background: #d6d3d1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a29e;
+}
+

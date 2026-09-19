@@ -1,0 +1,6 @@
+{
+  "name": "Ayar Atelier",
+  "description": "Modern luxury clothing brand with bilingual English/Myanmar support, lookbook gallery, streamlined digital wallet checkout, real-time order tracking, personalized recommendations, and admin inventory & analytics dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
