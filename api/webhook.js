@@ -2,6 +2,7 @@
 const FB_VERIFY_TOKEN = process.env.FB_VERIFY_TOKEN || 'ayar_atelier_secret_verify_token_2026';
 const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN || '';
 const STORE_URL = process.env.STORE_URL || 'https://ayaratelierfashion.vercel.app';
+const GRAPH_API_VERSION = process.env.GRAPH_API_VERSION || 'v20.0';
 
 export default async function handler(req, res) {
   // 1. Meta Webhook Verification (GET request)
@@ -24,6 +25,9 @@ export default async function handler(req, res) {
     if (body && body.object === 'page') {
       try {
         for (const entry of body.entry || []) {
+          // Explicit Page ID from incoming webhook (e.g. "622967770907596")
+          const pageId = entry.id;
+
           for (const event of entry.messaging || []) {
             const senderId = event.sender?.id;
             const message = event.message;
@@ -35,7 +39,7 @@ export default async function handler(req, res) {
             const text = (message?.text || postback?.payload || '').trim();
 
             if (text) {
-              await handleCustomerMessage(senderId, text);
+              await handleCustomerMessage(senderId, text, pageId);
             }
           }
         }
@@ -56,8 +60,9 @@ export default async function handler(req, res) {
 /**
  * Handle incoming customer message and send auto-reply
  */
-async function handleCustomerMessage(senderId, userText) {
-  if (!PAGE_ACCESS_TOKEN) {
+async function handleCustomerMessage(senderId, userText, pageId) {
+  const cleanToken = (PAGE_ACCESS_TOKEN || '').trim();
+  if (!cleanToken) {
     console.error('⚠️ PAGE_ACCESS_TOKEN is not set in Vercel Environment Variables!');
     return;
   }
@@ -92,7 +97,16 @@ async function handleCustomerMessage(senderId, userText) {
     ];
   }
   // 2. Product Catalog & Prices
-  else if (lower.includes('စျေး') || lower.includes('ဈေး') || lower.includes('price') || lower.includes('catalog') || lower.includes('VIEW_CATALOG') || lower.includes('ပိုး') || lower.includes('အင်္ကျီ') || lower.includes('ဝတ်စုံ')) {
+  else if (
+    lower.includes('စျေး') ||
+    lower.includes('ဈေး') ||
+    lower.includes('price') ||
+    lower.includes('catalog') ||
+    lower.includes('view_catalog') ||
+    lower.includes('ပိုး') ||
+    lower.includes('အင်္ကျီ') ||
+    lower.includes('ဝတ်စုံ')
+  ) {
     replyText =
       `👗 Ayar Atelier - Signature Collection\n` +
       `━━━━━━━━━━━━━━━━━━━━\n\n` +
@@ -119,7 +133,7 @@ async function handleCustomerMessage(senderId, userText) {
     ];
   }
   // 3. Order tracking or How to order
-  else if (lower.includes('order') || lower.includes('အော်ဒါ') || lower.includes('ဝယ်') || lower.includes('HOW_TO_ORDER')) {
+  else if (lower.includes('order') || lower.includes('အော်ဒါ') || lower.includes('ဝယ်') || lower.includes('how_to_order')) {
     replyText =
       `📦 အော်ဒါတင်ယူလိုပါက-\n\n` +
       `၁။ အောက်ပါ Store Link သို့ ဝင်ရောက်ပြီး မိမိနှစ်သက်သော ဝတ်စုံကို ရွေးချယ်ပါ\n` +
@@ -136,7 +150,7 @@ async function handleCustomerMessage(senderId, userText) {
     ];
   }
   // 4. Contact / Showrooms
-  else if (lower.includes('contact') || lower.includes('လိပ်စာ') || lower.includes('ဆိုင်') || lower.includes('ဖုန်း') || lower.includes('VIEW_CONTACT')) {
+  else if (lower.includes('contact') || lower.includes('လိပ်စာ') || lower.includes('ဆိုင်') || lower.includes('ဖုန်း') || lower.includes('view_contact')) {
     replyText =
       `🏛️ Ayar Atelier Showrooms & Contact\n` +
       `━━━━━━━━━━━━━━━━━━━━\n\n` +
@@ -163,13 +177,20 @@ async function handleCustomerMessage(senderId, userText) {
   }
 
   // Send message back to Facebook Messenger via Graph API
-  await sendMessengerReply(senderId, replyText, buttons);
+  await sendMessengerReply(senderId, replyText, buttons, pageId);
 }
 
 /**
- * Call Meta Graph API v20.0 to send message to recipient
+ * Call Meta Graph API to send message to recipient
+ * Fixed according to Meta Graph API official documentation:
+ * https://developers.facebook.com/docs/graph-api/
+ *
+ * Uses explicit PAGE_ID (e.g. https://graph.facebook.com/v20.0/<PAGE_ID>/messages)
+ * to prevent "Object with ID 'me' does not exist" errors.
  */
-async function sendMessengerReply(recipientId, text, buttons) {
+async function sendMessengerReply(recipientId, text, buttons, pageId) {
+  const cleanToken = (PAGE_ACCESS_TOKEN || '').trim();
+
   try {
     let messagePayload = { text };
 
@@ -186,24 +207,53 @@ async function sendMessengerReply(recipientId, text, buttons) {
       };
     }
 
-    const url = `https://graph.facebook.com/v20.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`;
-    const res = await fetch(url, {
+    // According to Meta Docs:
+    // https://graph.facebook.com/{API_VERSION}/{PAGE_ID}/messages
+    // Using the exact Page ID prevents the ambiguity of "Object with ID 'me' does not exist"
+    const targetId = pageId || 'me';
+    const endpoint = `https://graph.facebook.com/${GRAPH_API_VERSION}/${targetId}/messages?access_token=${encodeURIComponent(cleanToken)}`;
+
+    console.log(`📤 Sending Messenger reply to ${recipientId} via target ${targetId}...`);
+
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${cleanToken}`,
       },
       body: JSON.stringify({
         recipient: { id: recipientId },
         message: messagePayload,
         messaging_type: 'RESPONSE',
+        access_token: cleanToken,
       }),
     });
 
     const data = await res.json();
     if (!res.ok || data.error) {
-      console.error('❌ Facebook Graph API Error:', data.error);
+      console.error('❌ Facebook Graph API Error:', JSON.stringify(data.error));
+      
+      // If error is related to page target, retry with 'me' fallback
+      if (targetId !== 'me' && data.error?.message?.includes('Unsupported')) {
+        console.log('🔄 Retrying with /me/messages fallback...');
+        const fallbackUrl = `https://graph.facebook.com/${GRAPH_API_VERSION}/me/messages?access_token=${encodeURIComponent(cleanToken)}`;
+        const fallbackRes = await fetch(fallbackUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${cleanToken}`,
+          },
+          body: JSON.stringify({
+            recipient: { id: recipientId },
+            message: messagePayload,
+            messaging_type: 'RESPONSE',
+          }),
+        });
+        const fallbackData = await fallbackRes.json();
+        console.log('Fallback response:', fallbackData);
+      }
     } else {
-      console.log('✅ Messenger reply sent successfully:', data);
+      console.log('✅ Messenger reply sent successfully:', JSON.stringify(data));
     }
   } catch (err) {
     console.error('Network error calling Meta Send API:', err);
