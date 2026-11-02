@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Star, ShieldCheck, Heart, Truck, RotateCcw, Check, Sparkles, Zap, ShoppingBag, CreditCard } from 'lucide-react';
+import { X, Star, ShieldCheck, Heart, Truck, RotateCcw, Check, Sparkles, Zap, ShoppingBag, CreditCard, Bot } from 'lucide-react';
 import { Currency, Language, Product, UserProfile } from '../types';
 import { formatPrice, translations } from '../data/translations';
 
@@ -14,6 +14,7 @@ interface ProductDetailModalProps {
   onAddToCart: (product: Product, size: string, color: { name: string; nameMm: string; hex: string }, quantity: number) => void;
   onOneClickBuy: (product: Product, size: string, color: { name: string; nameMm: string; hex: string }) => void;
   userProfile: UserProfile;
+  onOrderViaTelegram?: (product: Product, size: string, color: { name: string; nameMm: string; hex: string }) => void;
 }
 
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
@@ -27,6 +28,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onAddToCart,
   onOneClickBuy,
   userProfile,
+  onOrderViaTelegram,
 }) => {
   if (!product) return null;
 
@@ -274,6 +276,18 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               <CreditCard className="w-4 h-4" />
               <span>{t.productDetail.buyNow} (KBZPay / Apple Pay / Cards)</span>
             </button>
+
+            {/* Telegram Bot Order Button */}
+            {onOrderViaTelegram && (
+              <button
+                id="btn-modal-telegram-buy"
+                onClick={() => onOrderViaTelegram(product, selectedSize, selectedColor)}
+                className="w-full h-10 bg-[#2481cc]/10 hover:bg-[#2481cc]/20 border border-[#2481cc]/40 text-[#1d70b3] hover:text-[#125387] rounded font-semibold text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-all shadow-2xs cursor-pointer"
+              >
+                <Bot className="w-4 h-4 text-[#2481cc]" />
+                <span className="font-myanmar">{t.telegram.orderViaBot} (@AyarAtelier_bot)</span>
+              </button>
+            )}
 
             <div className="flex items-center justify-center gap-4 text-[11px] text-stone-500 pt-1">
               <span className="flex items-center gap-1">

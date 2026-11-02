@@ -11,6 +11,7 @@ import {
   Server,
   ShieldCheck,
   ArrowLeft,
+  Bot,
 } from 'lucide-react';
 import { Currency, Language } from '../types';
 import { translations } from '../data/translations';
@@ -28,6 +29,7 @@ interface AdminHeaderProps {
   totalProductsCount: number;
   lowStockCount: number;
   onOpenStaffLogin?: () => void;
+  onOpenTelegramBot?: () => void;
 }
 
 export const AdminHeader: React.FC<AdminHeaderProps> = ({
@@ -43,6 +45,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   totalProductsCount,
   lowStockCount,
   onOpenStaffLogin,
+  onOpenTelegramBot,
 }) => {
   const t = translations[language];
 
@@ -200,6 +203,19 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               <Download className="w-3.5 h-3.5 text-amber-400" />
               <span>{language === 'mm' ? 'အစီရင်ခံစာ (CSV)' : 'Export CSV'}</span>
             </button>
+
+            {/* Telegram Bot Config Button */}
+            {onOpenTelegramBot && (
+              <button
+                id="admin-btn-telegram-config"
+                onClick={onOpenTelegramBot}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2481cc]/20 hover:bg-[#2481cc]/35 text-[#5db0f6] hover:text-white rounded-lg text-xs font-medium border border-[#2481cc]/40 transition-colors cursor-pointer"
+                title="Telegram Bot Settings & Mini App"
+              >
+                <Bot className="w-3.5 h-3.5 text-[#3ca3f0]" />
+                <span className="hidden xl:inline font-myanmar">{language === 'mm' ? 'Telegram Bot စနစ်' : 'Telegram Bot'}</span>
+              </button>
+            )}
 
             {/* Back to Customer Storefront Button */}
             <button

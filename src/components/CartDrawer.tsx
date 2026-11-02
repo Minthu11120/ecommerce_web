@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Trash2, ShoppingBag, ArrowRight, ShieldCheck, Tag, Plus, Minus } from 'lucide-react';
+import { X, Trash2, ShoppingBag, ArrowRight, ShieldCheck, Tag, Plus, Minus, Bot } from 'lucide-react';
 import { CartItem, Currency, Language } from '../types';
 import { formatPrice, translations } from '../data/translations';
 
@@ -13,6 +13,7 @@ interface CartDrawerProps {
   onRemoveItem: (index: number) => void;
   onProceedToCheckout: () => void;
   onClearCart: () => void;
+  onOrderViaTelegram?: () => void;
 }
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({
@@ -25,6 +26,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onRemoveItem,
   onProceedToCheckout,
   onClearCart,
+  onOrderViaTelegram,
 }) => {
   if (!isOpen) return null;
 
@@ -202,11 +204,26 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   onClose();
                   onProceedToCheckout();
                 }}
-                className="w-full h-11 bg-amber-800 hover:bg-amber-700 text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow transition-all active:scale-98"
+                className="w-full h-11 bg-amber-800 hover:bg-amber-700 text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow transition-all active:scale-98 cursor-pointer"
               >
                 <span>{t.cart.checkoutBtn}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
+
+              {/* Order via Telegram Bot */}
+              {onOrderViaTelegram && (
+                <button
+                  id="btn-cart-telegram-checkout"
+                  onClick={() => {
+                    onClose();
+                    onOrderViaTelegram();
+                  }}
+                  className="w-full h-10 bg-[#2481cc]/10 hover:bg-[#2481cc]/20 border border-[#2481cc]/40 text-[#1d70b3] hover:text-[#125387] rounded-lg text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer"
+                >
+                  <Bot className="w-4 h-4 text-[#2481cc]" />
+                  <span className="font-myanmar">{language === 'mm' ? 'Telegram Bot မှ အော်ဒါတင်မည်' : 'Order via Telegram Bot'}</span>
+                </button>
+              )}
 
               <div className="flex items-center justify-center gap-2 text-[10px] text-stone-500 pt-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />

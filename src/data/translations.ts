@@ -237,6 +237,15 @@ export const translations = {
       noEmails: 'No notifications yet. New order receipts will appear here.',
       viewHtml: 'View HTML Email Template',
     },
+    telegram: {
+      title: 'Telegram Bot Commerce',
+      tagline: 'Order directly via Telegram Bot & Instant Web App',
+      openBot: 'Telegram Shop Bot',
+      orderViaBot: 'Buy via Telegram Bot',
+      trackInBot: 'Track via Telegram',
+      miniApp: 'Telegram Mini App',
+      alertChannel: 'Telegram Order Alerts',
+    },
   },
   mm: {
     brandName: 'AYAR ATELIER',
@@ -473,6 +482,15 @@ export const translations = {
       subtitle: 'သင့်အော်ဒါ အတည်ပြုချက်နှင့် ပြေစာ အီးမေးလ်များ',
       noEmails: 'အကြောင်းကြားချက် မရှိသေးပါ။ အော်ဒါမှာယူပါက ပြေစာများ ဤနေရာတွင် ပေါ်လာပါမည်။',
       viewHtml: 'အီးမေးလ် အပြည့်အစုံ ကြည့်မည်',
+    },
+    telegram: {
+      title: 'Telegram Bot စနစ်ဖြင့် ဈေးရောင်းချခြင်း',
+      tagline: 'Telegram Bot နှင့် Mini App မှတစ်ဆင့် တိုက်ရိုက် ဝယ်ယူနိုင်ပါသည်',
+      openBot: 'Telegram Bot စတိုးဆိုင်',
+      orderViaBot: 'Telegram ဖြင့် အမြန်မှာမည်',
+      trackInBot: 'Telegram မှ ခြေရာခံမည်',
+      miniApp: 'Telegram Mini App ဆိုင်',
+      alertChannel: 'Telegram အော်ဒါသတိပေးချက်များ',
     },
   },
 } as const;

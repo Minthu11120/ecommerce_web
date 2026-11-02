@@ -12,6 +12,7 @@ import {
   Bell,
   SlidersHorizontal,
   Server,
+  Bot,
 } from 'lucide-react';
 import { Currency, Language, UserProfile } from '../types';
 import { translations } from '../data/translations';
@@ -43,6 +44,7 @@ interface HeaderProps {
   setSearchQuery?: (q: string) => void;
   userProfile?: UserProfile;
   onOpenStaffLogin?: () => void;
+  onOpenTelegramBot?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -72,6 +74,7 @@ export const Header: React.FC<HeaderProps> = ({
   setSearchQuery,
   userProfile,
   onOpenStaffLogin,
+  onOpenTelegramBot,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -309,6 +312,19 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
+            {/* Telegram Bot Commerce Button */}
+            {onOpenTelegramBot && (
+              <button
+                id="btn-telegram-bot-header"
+                onClick={onOpenTelegramBot}
+                className="hidden sm:flex items-center gap-1.5 bg-[#2481cc]/20 hover:bg-[#2481cc]/35 border border-[#2481cc]/50 text-[#5db0f6] hover:text-white px-2.5 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all shadow-xs cursor-pointer"
+                title={t.telegram.title}
+              >
+                <Bot className="w-3.5 h-3.5 text-[#3ca3f0]" />
+                <span className="hidden md:inline font-myanmar">{t.telegram.openBot}</span>
+              </button>
+            )}
+
             {/* User Account */}
             <button
               id="btn-user-account"
@@ -385,6 +401,21 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="bg-stone-700 text-xs px-2 py-0.5 rounded-full">{wishlistCount}</span>
             )}
           </button>
+          {onOpenTelegramBot && (
+            <button
+              onClick={() => {
+                onOpenTelegramBot();
+                setMobileMenuOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 text-sm font-medium text-[#4ea4f5] bg-[#2481cc]/15 hover:bg-[#2481cc]/30 rounded flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <Bot className="w-4 h-4 text-[#3ca3f0]" />
+                <span className="font-myanmar">{t.telegram.openBot}</span>
+              </div>
+              <span className="text-[10px] bg-[#2481cc] text-white px-2 py-0.5 rounded-full font-bold">Mini App</span>
+            </button>
+          )}
         </div>
       )}
     </header>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Eye, ShoppingBag, Star, Zap } from 'lucide-react';
+import { Heart, Eye, ShoppingBag, Star, Zap, Bot } from 'lucide-react';
 import { Currency, Language, Product } from '../types';
 import { formatPrice, translations } from '../data/translations';
 
@@ -12,6 +12,7 @@ interface ProductCardProps {
   onToggleWishlist: (productId: string) => void;
   onSelectProduct: (product: Product) => void;
   onQuickAdd: (product: Product) => void;
+  onOrderViaTelegram?: (product: Product) => void;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -23,6 +24,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onToggleWishlist,
   onSelectProduct,
   onQuickAdd,
+  onOrderViaTelegram,
 }) => {
   const t = translations[language];
   const title = language === 'mm' ? product.nameMm : product.name;
@@ -98,11 +100,24 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               e.stopPropagation();
               onQuickAdd(product);
             }}
-            className="bg-amber-700/90 hover:bg-amber-600 text-white p-2 rounded text-xs transition-colors shadow flex items-center justify-center"
+            className="bg-amber-700/90 hover:bg-amber-600 text-white p-2 rounded text-xs transition-colors shadow flex items-center justify-center cursor-pointer"
             title={t.catalog.addToBag}
           >
             <ShoppingBag className="w-4 h-4" />
           </button>
+          {onOrderViaTelegram && (
+            <button
+              id={`quick-telegram-${product.id}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onOrderViaTelegram(product);
+              }}
+              className="bg-[#2481cc]/90 hover:bg-[#2481cc] text-white p-2 rounded text-xs transition-colors shadow flex items-center justify-center cursor-pointer"
+              title={language === 'mm' ? 'Telegram Bot မှ ဝယ်ယူမည်' : 'Buy via Telegram Bot'}
+            >
+              <Bot className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 

@@ -14,6 +14,8 @@ import {
   Clock,
   Download,
   Store,
+  Bot,
+  ExternalLink,
 } from 'lucide-react';
 import { Currency, InventoryLog, Language, Order, Product } from '../types';
 import { formatPrice, translations } from '../data/translations';
@@ -31,6 +33,7 @@ interface AdminDashboardProps {
   onBackToStorefront?: () => void;
   activeTab?: 'inventory' | 'analytics' | 'audit';
   onTabChange?: (tab: 'inventory' | 'analytics' | 'audit') => void;
+  onOpenTelegramBot?: () => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -45,6 +48,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onBackToStorefront,
   activeTab: controlledTab,
   onTabChange,
+  onOpenTelegramBot,
 }) => {
   const t = translations[language];
   const [internalTab, setInternalTab] = useState<'inventory' | 'analytics' | 'audit'>('inventory');
@@ -157,7 +161,52 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <Download className="w-3.5 h-3.5 text-amber-300" />
             <span>{t.admin.exportReport}</span>
           </button>
+
+          {onOpenTelegramBot && (
+            <button
+              id="btn-admin-telegram-config"
+              onClick={onOpenTelegramBot}
+              className="px-3.5 py-2 bg-[#2481cc]/15 hover:bg-[#2481cc]/25 border border-[#2481cc]/40 text-[#1d70b3] hover:text-[#125387] text-xs font-semibold rounded-lg shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Bot className="w-3.5 h-3.5 text-[#2481cc]" />
+              <span className="font-myanmar">{language === 'mm' ? 'Telegram Bot စနစ်' : 'Telegram Bot'}</span>
+            </button>
+          )}
         </div>
+      </div>
+
+      {/* Telegram Gateway Status Banner */}
+      <div className="mb-8 p-3.5 bg-gradient-to-r from-[#0e1621] to-[#17212b] rounded-xl text-stone-200 border border-[#242f3d] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-[#2481cc] flex items-center justify-center text-white shrink-0 shadow-md">
+            <Bot className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-xs text-white">
+                Telegram Commerce Gateway (@AyarAtelier_bot)
+              </span>
+              <span className="bg-emerald-950 text-emerald-300 border border-emerald-800 text-[9px] px-1.5 py-0.2 rounded font-mono">
+                ONLINE
+              </span>
+            </div>
+            <p className="text-[11px] text-[#708499] mt-0.5 font-myanmar">
+              {language === 'mm'
+                ? 'Telegram Bot မှ အော်ဒါများကို တိုက်ရိုက်ရောင်းချနိုင်ပြီး ချန်နယ်သို့ အလိုအလျောက် အကြောင်းကြားပေးနေပါသည်'
+                : 'Direct in-bot ordering and automated customer receipt dispatch are active'}
+            </p>
+          </div>
+        </div>
+
+        {onOpenTelegramBot && (
+          <button
+            onClick={onOpenTelegramBot}
+            className="self-start sm:self-auto px-3 py-1.5 bg-[#2481cc] hover:bg-[#3ca3f0] text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors shadow-xs"
+          >
+            <span>{language === 'mm' ? 'Bot နှင့် စကားပြောရန် / ဆက်တင်' : 'Open Bot Console'}</span>
+            <ExternalLink className="w-3 h-3" />
+          </button>
+        )}
       </div>
 
       {/* KPI Cards Row */}

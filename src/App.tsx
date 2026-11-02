@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Zap,
   Store,
+  Bot,
 } from 'lucide-react';
 
 import {
@@ -35,6 +36,11 @@ import {
   addNewProductToDb,
 } from './services/dbSimulator';
 import { emailService } from './services/emailService';
+import {
+  dispatchTelegramOrderNotification,
+  dispatchTelegramStatusUpdate,
+  addTelegramMessage,
+} from './services/telegramBotService';
 import { DEMO_ADMIN, DEMO_CUSTOMER } from './data/mockUsers';
 
 // UI Components
@@ -53,6 +59,7 @@ import { CloudHaModal } from './components/CloudHaModal';
 import { EmailSimulatorDrawer } from './components/EmailSimulatorDrawer';
 import { PersonalizedRecommendations } from './components/PersonalizedRecommendations';
 import { StaffLoginModal } from './components/StaffLoginModal';
+import { TelegramBotDrawer } from './components/TelegramBotDrawer';
 
 export default function App() {
   // Global App State
@@ -95,6 +102,8 @@ export default function App() {
   const [isCloudHaOpen, setIsCloudHaOpen] = useState(false);
   const [isEmailDrawerOpen, setIsEmailDrawerOpen] = useState(false);
   const [isStaffLoginOpen, setIsStaffLoginOpen] = useState(false);
+  const [isTelegramBotOpen, setIsTelegramBotOpen] = useState(false);
+  const [isTelegramMiniApp, setIsTelegramMiniApp] = useState(false);
 
   // Sync to localStorage
   useEffect(() => {
@@ -104,6 +113,31 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('ayar_wishlist', JSON.stringify(wishlistIds));
   }, [wishlistIds]);
+
+  // Telegram Web App (TWA) Integration & Auto-Detection
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+      try {
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        setIsTelegramMiniApp(true);
+        if (tg.initDataUnsafe?.user) {
+          const tgUser = tg.initDataUnsafe.user;
+          const fullName = `${tgUser.first_name || ''} ${tgUser.last_name || ''}`.trim();
+          if (fullName) {
+            setUserProfile((prev) => ({
+              ...prev,
+              name: fullName,
+              email: tgUser.username ? `${tgUser.username}@telegram.org` : prev.email,
+            }));
+          }
+        }
+      } catch (err) {
+        console.warn('Telegram WebApp check:', err);
+      }
+    }
+  }, []);
 
   const t = translations[language];
 
@@ -128,6 +162,37 @@ export default function App() {
 
   const handleQuickAdd = (product: Product) => {
     handleAddToCart(product, product.sizes[0] || 'M', product.colors[0], 1);
+  };
+
+  const handleOneClickBuy = (product: Product, size?: string, color?: Product['colors'][0]) => {
+    const chosenSize = size || product.sizes[0] || 'M';
+    const chosenColor = color || product.colors[0];
+    setCartItems([{ product, selectedSize: chosenSize, selectedColor: chosenColor, quantity: 1 }]);
+    setSelectedProduct(null);
+    setIsCheckoutOpen(true);
+  };
+
+  const handleOrderViaTelegram = (product: Product, size?: string, color?: Product['colors'][0]) => {
+    const chosenSize = size || product.sizes[0] || 'M';
+    const chosenColor = color || product.colors[0];
+
+    // Seed bot message conversation
+    addTelegramMessage({
+      sender: 'user',
+      text: `မင်္ဂလာပါ ${product.nameMm} (${product.name}) အထည်ကို Telegram Bot မှ ဝယ်ယူလိုပါသည် 👗`,
+    });
+
+    addTelegramMessage({
+      sender: 'bot',
+      text: `✨ <b>${product.nameMm} (${product.name})</b>\n\nအရွယ်အစား: <b>${chosenSize}</b>\nအရောင်: <b>${chosenColor.nameMm || chosenColor.name}</b>\nကျသင့်ငွေ: <b>K ${product.priceMmk.toLocaleString()}</b>\n\nအောက်ပါခလုတ်ကို နှိပ်၍ ငွေပေးချေမှုကို အတည်ပြုနိုင်ပါသည်ရှင် -`,
+      photoUrl: product.images[0],
+      inlineButtons: [
+        { text: '💳 အတည်ပြု၍ ငွေပေးချေမည် (Confirm & Pay)', action: 'quick_buy', payload: product.id },
+        { text: '🛍️ စျေးဝယ်အိတ်ထဲ ထည့်မည်', action: 'add_to_cart', payload: product.id },
+      ],
+    });
+
+    setIsTelegramBotOpen(true);
   };
 
   const handleUpdateCartQuantity = (index: number, quantity: number) => {
@@ -193,7 +258,17 @@ export default function App() {
     const email = emailService.sendOrderConfirmationEmail(newOrder);
     setEmails(emailService.getEmails());
 
-    // 4. Boost user loyalty points
+    // 4. Send automated Telegram Bot receipt & notify sales channel
+    dispatchTelegramOrderNotification(newOrder);
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+      try {
+        window.Telegram.WebApp.HapticFeedback?.notificationOccurred('success');
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    // 5. Boost user loyalty points
     const ptsEarned = Math.floor(newOrder.total * 0.1);
     const updatedProfile = {
       ...userProfile,
@@ -208,6 +283,9 @@ export default function App() {
     const updated = dbSimulator.advanceOrderStatus(orderId);
     if (updated) {
       setOrders(dbSimulator.getOrders());
+
+      // Send automated Telegram notification
+      dispatchTelegramStatusUpdate(updated, updated.status);
 
       // Send automated status update email for dispatched or delivered
       if (updated.status === 'dispatched') {
@@ -374,6 +452,7 @@ export default function App() {
           totalProductsCount={products.length}
           lowStockCount={products.filter((p) => p.stock < 10).length}
           onOpenStaffLogin={() => setIsStaffLoginOpen(true)}
+          onOpenTelegramBot={() => setIsTelegramBotOpen(true)}
         />
       ) : (
         <Header
@@ -409,7 +488,25 @@ export default function App() {
           setSearchQuery={setSearchQuery}
           userProfile={userProfile}
           onOpenStaffLogin={() => setIsStaffLoginOpen(true)}
+          onOpenTelegramBot={() => setIsTelegramBotOpen(true)}
         />
+      )}
+
+      {/* Telegram Mini App Top Ribbon if running in Telegram Web App */}
+      {isTelegramMiniApp && (
+        <div className="bg-[#2481cc] text-white text-xs px-4 py-1.5 flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-2">
+            <Bot className="w-4 h-4 shrink-0 text-white" />
+            <span className="font-semibold">Telegram WebApp Active</span>
+            <span className="hidden sm:inline text-blue-100 text-[11px]">• Direct In-Bot Checkout &amp; Order Sync</span>
+          </div>
+          <button
+            onClick={() => setIsTelegramBotOpen(true)}
+            className="text-[11px] bg-white/20 hover:bg-white/30 px-2.5 py-0.5 rounded-full font-medium transition-colors cursor-pointer"
+          >
+            {language === 'mm' ? 'Bot စကားပြောခန်းဖွင့်မည်' : 'Open Bot Chat'}
+          </button>
+        </div>
       )}
 
       {/* Main View Router */}
@@ -558,6 +655,7 @@ export default function App() {
                         onSelectProduct={handleSelectProduct}
                         onToggleWishlist={handleToggleWishlist}
                         onQuickAdd={handleQuickAdd}
+                        onOrderViaTelegram={handleOrderViaTelegram}
                       />
                     ))}
                   </div>
@@ -630,6 +728,7 @@ export default function App() {
               onBackToStorefront={() => setActiveView('catalog')}
               activeTab={adminActiveTab}
               onTabChange={setAdminActiveTab}
+              onOpenTelegramBot={() => setIsTelegramBotOpen(true)}
             />
           ) : (
             <div className="max-w-xl mx-auto my-20 px-6 py-12 bg-stone-900 text-stone-100 rounded-2xl shadow-xl border border-stone-800 text-center space-y-6">
@@ -821,6 +920,8 @@ export default function App() {
           onClose={() => setSelectedProduct(null)}
           onAddToCart={handleAddToCart}
           onToggleWishlist={handleToggleWishlist}
+          onOneClickBuy={handleOneClickBuy}
+          onOrderViaTelegram={handleOrderViaTelegram}
         />
       )}
 
@@ -835,6 +936,10 @@ export default function App() {
         onRemoveItem={handleRemoveCartItem}
         onProceedToCheckout={() => setIsCheckoutOpen(true)}
         onClearCart={handleClearCart}
+        onOrderViaTelegram={() => {
+          setIsCartOpen(false);
+          setIsTelegramBotOpen(true);
+        }}
       />
 
       {/* CHECKOUT MODAL */}
@@ -850,6 +955,10 @@ export default function App() {
         currency={currency}
         onOrderCompleted={handleOrderCompleted}
         onClearCart={handleClearCart}
+        onOpenTelegramBot={() => {
+          setIsCheckoutOpen(false);
+          setIsTelegramBotOpen(true);
+        }}
       />
 
       {/* USER ACCOUNT & OAUTH MODAL */}
@@ -899,6 +1008,35 @@ export default function App() {
         emails={emails}
         language={language}
         onSelectOrderTracking={(orderId) => {
+          setActiveView('tracking');
+        }}
+      />
+
+      {/* FLOATING TELEGRAM BOT COMMERCE LAUNCHER */}
+      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2 group">
+        <button
+          id="btn-floating-telegram-bot"
+          onClick={() => setIsTelegramBotOpen(true)}
+          className="w-13 h-13 rounded-full bg-gradient-to-tr from-[#2481cc] to-[#3ca3f0] hover:from-[#1d70b3] hover:to-[#2481cc] text-white shadow-xl hover:shadow-2xl flex items-center justify-center transition-all duration-200 active:scale-95 border-2 border-white/40 cursor-pointer"
+          title={language === 'mm' ? 'Telegram Bot စတိုးဆိုင်ဖွင့်မည်' : 'Open Telegram Bot Store'}
+          aria-label="Open Telegram Bot Store"
+        >
+          <Bot className="w-6 h-6" />
+        </button>
+      </div>
+
+      {/* TELEGRAM BOT COMMERCE DRAWER */}
+      <TelegramBotDrawer
+        isOpen={isTelegramBotOpen}
+        onClose={() => setIsTelegramBotOpen(false)}
+        products={products}
+        orders={orders}
+        language={language}
+        onSelectProduct={handleSelectProduct}
+        onQuickOrder={(prod) => {
+          handleOneClickBuy(prod, prod.sizes[0] || 'M', prod.colors[0]);
+        }}
+        onViewOrderTracking={(orderId) => {
           setActiveView('tracking');
         }}
       />

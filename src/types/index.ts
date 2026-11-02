@@ -218,3 +218,90 @@ export interface HighAvailabilityStatus {
     recoveryState: 'SUCCESS';
   };
 }
+
+export interface TelegramBotConfig {
+  botToken: string;
+  botUsername: string;
+  channelChatId: string;
+  adminChatId: string;
+  notifyOnOrder: boolean;
+  notifyOnDispatched: boolean;
+  notifyOnDelivered: boolean;
+  enableTWA: boolean;
+  lastPingAt?: string;
+}
+
+export interface TelegramInlineButton {
+  text: string;
+  action?: string;
+  url?: string;
+  payload?: string;
+}
+
+export interface TelegramMessage {
+  id: string;
+  sender: 'bot' | 'user' | 'system';
+  text: string;
+  timestamp: string;
+  photoUrl?: string;
+  inlineButtons?: TelegramInlineButton[];
+  orderSnippet?: {
+    id: string;
+    total: string;
+    status: string;
+    trackingNumber: string;
+  };
+}
+
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: {
+        ready: () => void;
+        expand: () => void;
+        close: () => void;
+        sendData: (data: string) => void;
+        initDataUnsafe?: {
+          user?: {
+            id: number;
+            first_name: string;
+            last_name?: string;
+            username?: string;
+            language_code?: string;
+          };
+          start_param?: string;
+        };
+        themeParams?: {
+          bg_color?: string;
+          text_color?: string;
+          hint_color?: string;
+          link_color?: string;
+          button_color?: string;
+          button_text_color?: string;
+          secondary_bg_color?: string;
+        };
+        MainButton: {
+          text: string;
+          color: string;
+          textColor: string;
+          isVisible: boolean;
+          isActive: boolean;
+          show: () => void;
+          hide: () => void;
+          enable: () => void;
+          disable: () => void;
+          setText: (text: string) => void;
+          onClick: (callback: () => void) => void;
+          offClick: (callback: () => void) => void;
+        };
+        HapticFeedback: {
+          impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
+          notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
+          selectionChanged: () => void;
+        };
+        openTelegramLink: (url: string) => void;
+        openLink: (url: string) => void;
+      };
+    };
+  }
+}

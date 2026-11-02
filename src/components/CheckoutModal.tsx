@@ -11,6 +11,8 @@ import {
   Sparkles,
   QrCode,
   Fingerprint,
+  Bot,
+  Send,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CartItem, Currency, Language, Order, UserProfile } from '../types';
@@ -25,6 +27,7 @@ interface CheckoutModalProps {
   currency: Currency;
   onOrderCompleted: (newOrder: Order) => void;
   onClearCart: () => void;
+  onOpenTelegramBot?: () => void;
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
@@ -36,6 +39,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   currency,
   onOrderCompleted,
   onClearCart,
+  onOpenTelegramBot,
 }) => {
   if (!isOpen) return null;
 
@@ -268,14 +272,32 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 {t.checkout.emailSentNotice} <strong>{orderSuccess.customer.email}</strong>.
               </p>
 
-              <button
-                id="btn-goto-tracking-success"
-                onClick={onClose}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-stone-900 hover:bg-stone-800 text-white rounded-lg text-sm font-semibold tracking-wide shadow transition-colors"
-              >
-                <span>{t.checkout.viewTracking}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                <button
+                  id="btn-goto-tracking-success"
+                  onClick={onClose}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-stone-900 hover:bg-stone-800 text-white rounded-lg text-sm font-semibold tracking-wide shadow transition-colors"
+                >
+                  <span>{t.checkout.viewTracking}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+
+                {onOpenTelegramBot && (
+                  <button
+                    id="btn-goto-telegram-tracking-success"
+                    onClick={() => {
+                      onClose();
+                      onOpenTelegramBot();
+                    }}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#2481cc] hover:bg-[#3ca3f0] text-white rounded-lg text-sm font-semibold tracking-wide shadow transition-colors cursor-pointer"
+                  >
+                    <Bot className="w-4 h-4" />
+                    <span className="font-myanmar">
+                      {language === 'mm' ? 'Telegram Bot မှ ခြေရာခံမည်' : 'Track in Telegram Bot'}
+                    </span>
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <>
